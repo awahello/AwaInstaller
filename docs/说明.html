@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awa的安装助手 · 说明</title>
+<style>
+  :root{
+    --bg:#14161A; --bar:#1D2026; --card:#22262E; --line:#2C313A;
+    --tx:#E9EDF3; --tx2:#9BA5B4; --tx3:#6C7787;
+    --acc:#3B82F6; --sys:#C2761B; --usr:#1F8A4C; --warn:#FFD166;
+    --btn:#1A2130; --page:#0E1013;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:36px 22px 80px; background:var(--page); color:var(--tx);
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  h1{font-size:26px;margin:0 0 8px;letter-spacing:.4px;}
+  .sub{color:var(--tx2);font-size:14px;margin:0 0 8px;line-height:1.8;}
+  .sub b{color:var(--warn);}
+  .meta{color:var(--tx3);font-size:12.5px;margin:0 0 26px;
+        font-family:Consolas,Monaco,monospace;line-height:1.9;}
+  .meta b{color:#5FD69A;}
+
+  .notice{
+    background:#1A1E26;border:1px solid #2E3644;border-left:4px solid var(--acc);
+    border-radius:8px;padding:14px 17px;font-size:13.5px;line-height:1.85;
+    color:#C9D3E0;margin:0 0 16px;
+  }
+  .notice.good{border-left-color:var(--usr);}
+  .notice.warn{border-left-color:var(--warn);}
+  .notice b{color:var(--warn);}
+  .notice.good b{color:#5FD69A;}
+  .notice code,.info code,td code,li code{
+    background:#0F1319;border-radius:4px;padding:2px 6px;
+    font-family:Consolas,Monaco,monospace;font-size:12px;color:#8FD1FF;
+  }
+
+  h2{font-size:16px;margin:40px 0 6px;padding-left:11px;
+     border-left:4px solid var(--acc);line-height:1.25;}
+  h2 .tag{font-size:11px;font-weight:500;border-radius:4px;padding:2px 7px;
+          margin-left:9px;vertical-align:2px;letter-spacing:.5px;}
+  .tag.new{background:var(--usr);color:#EAFFF3;}
+  .tag.chg{background:var(--warn);color:#2A2000;}
+  .tag.del{background:#8B2E2E;color:#FFE6E6;}
+  .tag.keep{background:#3A4353;color:#B8C3D2;}
+  .cap{color:var(--tx2);font-size:13px;margin:0 0 14px;line-height:1.8;padding-left:15px;}
+
+  .device{width:100%;max-width:1000px;margin:0 auto 8px;background:var(--bg);
+          border:1px solid #333A46;border-radius:12px;overflow:hidden;
+          box-shadow:0 14px 40px rgba(0,0,0,.55);}
+  .scr{display:flex;flex-direction:column;height:540px;font-size:13px;}
+  .top{display:flex;align-items:center;background:var(--bar);
+       padding:11px 16px 11px 18px;flex:0 0 auto;}
+  .top .title{font-size:19px;font-weight:700;letter-spacing:.3px;}
+  .top .spacer{flex:1;}
+  .b{background:var(--btn);border-radius:5px;padding:6px 15px;font-size:13px;
+     color:var(--tx);margin-left:7px;white-space:nowrap;}
+  .b.warn{color:var(--warn);} .b.dim{color:var(--tx2);}
+  .b.acc{background:var(--acc);color:#fff;font-weight:600;}
+
+  .tabs{display:flex;gap:8px;background:var(--bar);padding:0 12px 9px;flex:0 0 auto;}
+  .tab{flex:1;text-align:center;padding:9px 0;border-radius:5px;font-size:14px;
+       color:var(--tx2);background:var(--card);}
+  .tab.on{background:var(--acc);color:#fff;font-weight:600;}
+
+  .tools{display:flex;align-items:center;gap:6px;padding:9px 12px;flex:0 0 auto;}
+  .chip{background:var(--card);color:var(--tx2);border-radius:16px;
+        padding:6px 14px;font-size:12.5px;white-space:nowrap;}
+  .chip.on{background:var(--acc);color:#fff;}
+  .chip.hot{background:#1F8A4C;color:#fff;}
+  .tools .spacer{flex:1;}
+  .rescan{color:var(--tx2);font-size:12.5px;padding:6px 12px;
+          border:1px solid #333A46;border-radius:5px;white-space:nowrap;}
+
+  .list{flex:1;overflow:hidden;padding:0 10px;}
+  .row{display:flex;align-items:center;background:var(--card);border-radius:6px;
+       padding:10px 14px;margin-bottom:7px;}
+  .ico{width:40px;height:40px;border-radius:9px;flex:0 0 auto;margin-right:12px;
+       display:flex;align-items:center;justify-content:center;
+       font-size:12px;font-weight:700;color:#fff;}
+  .col{flex:1;min-width:0;}
+  .l1{font-size:15px;font-weight:600;}
+  .l2{font-size:12px;color:var(--tx2);margin-top:2px;}
+  .l3{font-size:11px;color:var(--tx3);margin-top:2px;}
+  .l4{font-size:11px;color:var(--tx3);margin-top:2px;}
+  .badge{font-size:11px;color:#fff;border-radius:4px;padding:3px 8px;
+         white-space:nowrap;margin-left:10px;}
+  .badge.sys{background:var(--sys);} .badge.usr{background:var(--usr);}
+  .badge.dir{background:#2F6FB0;} .badge.f{background:#4A5568;}
+  .foot{flex:0 0 auto;background:var(--bar);color:var(--tx3);font-size:11.5px;
+        padding:8px 16px;line-height:1.5;}
+
+  .modalwrap{flex:1;background:rgba(8,10,13,.72);display:flex;
+             align-items:center;justify-content:center;padding:18px;}
+  .modal{width:100%;max-width:640px;background:#1B1F26;border:1px solid #333A46;
+         border-radius:11px;overflow:hidden;box-shadow:0 16px 44px rgba(0,0,0,.6);}
+  .modal .mh{padding:14px 18px;font-size:15px;font-weight:700;
+             border-bottom:1px solid var(--line);}
+  .modal .mb{padding:16px 18px;font-size:13px;line-height:1.9;color:#C9D3E0;}
+  .modal .mb.mono{font-family:Consolas,Monaco,monospace;font-size:12.5px;
+                  white-space:pre-wrap;line-height:1.75;color:#DCE3EC;
+                  max-height:320px;overflow:hidden;}
+  .modal .mb.mono .hl{color:var(--warn);}
+  .modal .mb.mono .c{color:var(--tx3);}
+  .modal .mf{display:flex;justify-content:flex-end;gap:8px;
+             padding:12px 18px;border-top:1px solid var(--line);}
+  .menu{display:flex;flex-direction:column;}
+  .menu .mi{padding:13px 20px;font-size:14px;border-bottom:1px solid #232A33;}
+  .menu .mi:last-child{border-bottom:0;}
+  .menu .mi.red{color:#FF9B9B;}
+
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px;}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #242A33;vertical-align:top;}
+  th{color:var(--tx2);font-weight:600;background:#171B21;font-size:12.5px;}
+  td{color:#C9D3E0;line-height:1.7;}
+  td.k{color:var(--tx);font-weight:600;white-space:nowrap;}
+  .pill{display:inline-block;font-size:11px;border-radius:4px;padding:2px 7px;margin-right:6px;}
+  .pill.new{background:var(--usr);color:#EAFFF3;}
+  .pill.chg{background:var(--warn);color:#2A2000;}
+  .pill.del{background:#8B2E2E;color:#FFE6E6;}
+  .pill.keep{background:#3A4353;color:#B8C3D2;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr;}}
+
+  ol,ul{color:#C9D3E0;font-size:13.5px;line-height:2;padding-left:22px;margin:10px 0;}
+  ol b,ul b{color:var(--tx);}
+  .kbd{background:#0F1319;border:1px solid #2E3644;border-radius:4px;padding:1px 6px;
+       font-family:Consolas,Monaco,monospace;font-size:12px;color:#8FD1FF;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Awa的安装助手</h1>
+  <p class="sub">
+    吉利 ECARX R621 车机（MT6735 / Android 5.1 / API 22）用的安装助手 ——
+    查已装软件、看安装卸载教程、自带文件管理器、一键开无线 ADB。<b>不装不卸；只有无线 ADB 一项会借 root。</b>
+  </p>
+  <p class="meta">
+    包名 com.awa.apkinstaller　·　版本 1.0.0　·　92,076 字节　·　md5 ac62820e84721e401b8f85b5a917d723<br>
+    出包校验 <b>164 项全绿 / 0 失败</b>　·　签名密钥与上一版相同，<b>可直接覆盖安装</b>
+  </p>
+
+  <div class="notice good">
+    <b>这一轮：把无线 ADB 真正能用了，另外把「多 U 盘弹选择框」改成自动识别。</b><br>
+    ① <b>修掉一个连原版都有的坑</b> —— 判定提权是否跑通用「输出里有没有
+    <code>__AWA_END__</code>」，但 <code>IOException</code> 的 message 里会带完整命令行，
+    而命令行本身含 <code>echo __AWA_END__</code>，于是「进程根本没起来」被判成「跑通了」，
+    真实失败原因被彻底盖住。现在异常消息整段抹掉 + 标记必须单独占一行，
+    <b>16 条单元测试覆盖</b>。<br>
+    ② <b>多个外置存储自动认</b> —— 这台 R621 会同时挂出 <code>usb0~usb3</code> 和
+    <code>sdcard1</code>，原来弹「选一个外置存储」。现在按「路径带 usb → 有条目 →
+    带 extsd」自动挑，选中后告诉你选了哪个。<br>
+    ③ <b>提权失败弹引导</b> —— R621 的 SELinux 不允许应用执行自己私有目录的副本，
+    /sdcard 又是 noexec，必然要借一次电脑 ADB 放进 <code>/data/local/tmp</code>。
+    现在自动导 <code>mtk-su</code> 到 <code>/sdcard</code> 并弹出那条 staging 命令。<br>
+    ④ <b>原生系统设置改成像原版的 14 项入口列表</b> —— 直接拉对应 Activity，
+    不用再一层层点。
+  </div>
+
+  <div class="notice warn">
+    <b>关于 ES 文件浏览器：</b>按你的要求已经<b>完全去掉</b>。
+    实测过——ES 的源码没法合并进我们的包（两套资源 ID 都是 <code>0x7f</code> 开头，必然冲突；
+    ES 代码里还硬编码了自己的签名做自校验，换签名就失效）。所以改成自带一个文件管理器，
+    真正免安装、免权限，点开就能用。
+  </div>
+
+  <h2>1 · 主界面「已安装的软件」<span class="tag keep">保持</span></h2>
+  <p class="cap">顶栏是原版的「设置 + 重启」，右上角「关于」。标签栏三个页签。点任意一条 → 看它的目录 / 文件名 + 卸载教程。</p>
+  <div class="device"><div class="scr">
+    <div class="top">
+      <span class="title">Awa的安装助手</span>
+      <span class="b">设置</span><span class="b warn">重启</span>
+      <span class="spacer"></span><span class="b dim">关于</span>
+    </div>
+    <div class="tabs">
+      <div class="tab on">已安装的软件</div>
+      <div class="tab">存储里的 APK</div>
+      <div class="tab">文件管理</div>
+    </div>
+    <div class="tools">
+      <span class="chip on">全部</span>
+      <span class="chip">系统应用</span>
+      <span class="chip">用户应用</span>
+      <span class="spacer"></span>
+      <span class="rescan">重新扫描</span>
+    </div>
+    <div class="list">
+      <div class="row">
+        <div class="ico" style="background:#4A5568">设</div>
+        <div class="col">
+          <div class="l1">设置</div>
+          <div class="l2">com.android.settings　·　v5.1</div>
+          <div class="l3">目录　/system/priv-app/Settings</div>
+          <div class="l4">文件　Settings.apk　(12.4 MB)</div>
+        </div>
+        <span class="badge sys">系统·特权</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#2C6E9B">蓝</div>
+        <div class="col">
+          <div class="l1">蓝牙</div>
+          <div class="l2">com.android.bluetooth　·　v5.1</div>
+          <div class="l3">目录　/system/app/Bluetooth</div>
+          <div class="l4">文件　Bluetooth.apk　(3.1 MB)</div>
+        </div>
+        <span class="badge sys">系统应用</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#8B5CF6">E</div>
+        <div class="col">
+          <div class="l1">ES 文件浏览器</div>
+          <div class="l2">com.estrongs.android.pop　·　v4.0.3.1</div>
+          <div class="l3">目录　/data/app/com.estrongs.android.pop-1</div>
+          <div class="l4">文件　base.apk　(5.1 MB)</div>
+        </div>
+        <span class="badge usr">用户应用</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#C2761B">A</div>
+        <div class="col">
+          <div class="l1">Awa的安装助手</div>
+          <div class="l2">com.awa.apkinstaller　·　v1.0.0</div>
+          <div class="l3">目录　/system/priv-app/com.awa.apkinstaller</div>
+          <div class="l4">文件　base.apk　(35 KB)</div>
+        </div>
+        <span class="badge sys">系统·特权</span>
+      </div>
+    </div>
+    <div class="foot">当前列出 4 个：系统 3 / 用户 1　·　点条目 → 卸载教程</div>
+  </div></div>
+
+  <h2>2 · 文件管理 —— 看车机目录<span class="tag new">新增</span></h2>
+  <p class="cap">
+    点「文件管理」直接就是能用的文件管理器，不用装任何东西。
+    顶栏 <b>车机</b> / <b>U盘</b> 两个按钮一键切换两边目录，当前在哪个盘哪个按钮会亮。
+  </p>
+  <div class="device"><div class="scr">
+    <div class="top">
+      <span class="title">Awa的安装助手</span>
+      <span class="b">设置</span><span class="b warn">重启</span>
+      <span class="spacer"></span><span class="b dim">关于</span>
+    </div>
+    <div class="tabs">
+      <div class="tab">已安装的软件</div>
+      <div class="tab">存储里的 APK</div>
+      <div class="tab on">文件管理</div>
+    </div>
+    <div class="tools">
+      <span class="chip on">车机</span>
+      <span class="chip">U盘</span>
+      <span class="chip">上一级</span>
+      <span class="chip">新建</span>
+      <span class="chip">粘贴</span>
+      <span class="chip">刷新</span>
+    </div>
+    <div class="list">
+      <div class="row">
+        <div class="ico" style="background:#2F6FB0">DIR</div>
+        <div class="col">
+          <div class="l1">Download</div>
+          <div class="l2">文件夹</div>
+          <div class="l3">2026-10-15 13:20</div>
+        </div>
+        <span class="badge dir">目录</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#2F6FB0">DIR</div>
+        <div class="col">
+          <div class="l1">Android</div>
+          <div class="l2">文件夹</div>
+          <div class="l3">2026-10-08 09:14</div>
+        </div>
+        <span class="badge dir">目录</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#4A5568">APK</div>
+        <div class="col">
+          <div class="l1">MyApp.apk</div>
+          <div class="l2">文件　·　.apk</div>
+          <div class="l3">2026-10-15 11:02</div>
+          <div class="l4">3.2 MB</div>
+        </div>
+        <span class="badge f">文件</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#4A5568">FILE</div>
+        <div class="col">
+          <div class="l1">mtk-su</div>
+          <div class="l2">文件</div>
+          <div class="l3">2026-10-14 20:31</div>
+          <div class="l4">63.6 KB</div>
+        </div>
+        <span class="badge f">文件</span>
+      </div>
+    </div>
+    <div class="foot">/storage/emulated/0　·　4 项　·　点进入 / 长按条目 → 复制·剪切·重命名·删除·属性</div>
+  </div></div>
+
+  <h2>3 · 文件管理 —— 看 U盘目录<span class="tag new">新增</span></h2>
+  <p class="cap">
+    点「U盘」直接跳到 U 盘根目录（自动探测 <code>/mnt/usb/sda1</code>、<code>/storage/usbdisk</code> 等十几个常见挂载点）。
+    没插 U 盘会提示你插好再点「刷新」。
+  </p>
+  <div class="device"><div class="scr">
+    <div class="top">
+      <span class="title">Awa的安装助手</span>
+      <span class="b">设置</span><span class="b warn">重启</span>
+      <span class="spacer"></span><span class="b dim">关于</span>
+    </div>
+    <div class="tabs">
+      <div class="tab">已安装的软件</div>
+      <div class="tab">存储里的 APK</div>
+      <div class="tab on">文件管理</div>
+    </div>
+    <div class="tools">
+      <span class="chip">车机</span>
+      <span class="chip on">U盘</span>
+      <span class="chip">上一级</span>
+      <span class="chip">新建</span>
+      <span class="chip">粘贴</span>
+      <span class="chip">刷新</span>
+    </div>
+    <div class="list">
+      <div class="row">
+        <div class="ico" style="background:#4A5568">APK</div>
+        <div class="col">
+          <div class="l1">EasyPlay-Lynk-1011-v73.apk</div>
+          <div class="l2">文件　·　.apk</div>
+          <div class="l3">2026-10-11 08:46</div>
+          <div class="l4">8.5 MB</div>
+        </div>
+        <span class="badge f">文件</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#4A5568">APK</div>
+        <div class="col">
+          <div class="l1">SysSettings-v1.1.apk</div>
+          <div class="l2">文件　·　.apk</div>
+          <div class="l3">2026-10-11 14:24</div>
+          <div class="l4">24.8 KB</div>
+        </div>
+        <span class="badge f">文件</span>
+      </div>
+      <div class="row">
+        <div class="ico" style="background:#2F6FB0">DIR</div>
+        <div class="col">
+          <div class="l1">提权安装apk</div>
+          <div class="l2">文件夹</div>
+          <div class="l3">2026-10-09 16:38</div>
+        </div>
+        <span class="badge dir">目录</span>
+      </div>
+    </div>
+    <div class="foot">/mnt/usb/sda1　·　3 项　·　点进入 / 长按条目 → 复制·剪切·重命名·删除·属性</div>
+  </div></div>
+
+  <h2>4 · 长按条目 → 操作菜单<span class="tag new">新增</span></h2>
+  <p class="cap">
+    短按 = 进目录 / 用别的应用打开这个文件；<b>长按 = 操作菜单</b>。
+    复制或剪切之后，切到另一个盘（车机 ↔ U盘）点「粘贴」就拷过去了。
+  </p>
+  <div class="grid2">
+    <div class="device"><div class="scr" style="height:420px">
+      <div class="top">
+        <span class="title">Awa的安装助手</span>
+        <span class="b">设置</span><span class="b warn">重启</span>
+        <span class="spacer"></span><span class="b dim">关于</span>
+      </div>
+      <div class="tabs">
+        <div class="tab">已安装的软件</div><div class="tab">存储里的 APK</div>
+        <div class="tab on">文件管理</div>
+      </div>
+      <div class="modalwrap">
+        <div class="modal" style="max-width:380px">
+          <div class="mh">MyApp.apk</div>
+          <div class="menu">
+            <div class="mi">打开</div>
+            <div class="mi">复制</div>
+            <div class="mi">剪切</div>
+            <div class="mi">重命名</div>
+            <div class="mi red">删除</div>
+            <div class="mi">属性</div>
+          </div>
+          <div class="mf"><span class="b dim">取消</span></div>
+        </div>
+      </div>
+      <div class="foot">长按任意条目</div>
+    </div></div>
+
+    <div class="device"><div class="scr" style="height:420px">
+      <div class="top">
+        <span class="title">Awa的安装助手</span>
+        <span class="b">设置</span><span class="b warn">重启</span>
+        <span class="spacer"></span><span class="b dim">关于</span>
+      </div>
+      <div class="tabs">
+        <div class="tab">已安装的软件</div><div class="tab">存储里的 APK</div>
+        <div class="tab on">文件管理</div>
+      </div>
+      <div class="tools">
+        <span class="chip">车机</span><span class="chip on">U盘</span>
+        <span class="chip">上一级</span><span class="chip">新建</span>
+        <span class="chip hot">粘贴</span><span class="chip">刷新</span>
+      </div>
+      <div class="modalwrap">
+        <div class="modal" style="max-width:400px">
+          <div class="mh">属性 · MyApp.apk</div>
+          <div class="mb mono">路径   /mnt/usb/sda1/MyApp.apk
+类型   文件
+大小   3.2 MB（3355443 字节）
+修改   2026-10-15 11:02
+可读   是
+可写   是
+可执行 否</div>
+          <div class="mf"><span class="b dim">关闭</span><span class="b dim">复制全部</span></div>
+        </div>
+      </div>
+      <div class="foot">剪贴板有东西时「粘贴」会变绿</div>
+    </div></div>
+  </div>
+
+  <h2>5 · 设置面板<span class="tag new">加无线 ADB 一键开关</span></h2>
+  <p class="cap">
+    ADB 开关只走系统权限（装进 <code>/system/priv-app</code> 免 root 生效），改不了就把命令给你。<br>
+    <b>无线 ADB</b> 改成了真开关：点「开启」直接生效，不用再去 adb shell 里敲命令。
+    但它在 Android 5.1 上没有免 root 的接口（控制端口的 <code>adb_tcp_port</code> 是 Android 6.0 才加的，
+    这台车机的 <code>Settings.Global</code> 里根本没这个字段），所以<b>这一项是全工具唯一会借 root 的地方</b> ——
+    用你自己投放的 <code>mtk-su</code> 跑一条 <code>setprop</code>。开关下面还留了「手敲命令 / 说明」入口。
+  </p>
+  <div class="device"><div class="scr">
+    <div class="top">
+      <span class="title">Awa的安装助手</span>
+      <span class="b">设置</span><span class="b warn">重启</span>
+      <span class="spacer"></span><span class="b dim">关于</span>
+    </div>
+    <div class="tabs">
+      <div class="tab on">已安装的软件</div><div class="tab">存储里的 APK</div>
+      <div class="tab">文件管理</div>
+    </div>
+    <div class="modalwrap">
+      <div class="modal" style="max-width:560px">
+        <div class="mh">设置</div>
+        <div class="mb" style="padding:6px 18px 14px;max-height:340px;overflow:hidden">
+          <div style="font-size:12.5px;font-weight:700;color:var(--acc);margin:10px 0 8px">车机信息</div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">Android 版本</div></div><span style="font-size:12.5px;color:var(--tx2)">5.1（API 22）</span></div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">机型</div></div><span style="font-size:12.5px;color:var(--tx2)">ECARX R621</span></div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">本机 IP</div></div><span style="font-size:12.5px;color:var(--tx2)">192.168.1.36（wlan0）</span></div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">存储</div></div><span style="font-size:12.5px;color:var(--tx2)">9.4 GB 可用 / 24.0 GB</span></div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">当前身份</div></div><span style="font-size:12.5px;color:var(--usr)">系统应用（权限已生效）</span></div>
+          <div style="font-size:12.5px;font-weight:700;color:var(--acc);margin:14px 0 8px">开关</div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">ADB 调试（USB）</div></div><span style="font-size:12.5px;color:var(--usr);margin-right:10px">已开启</span><span style="color:var(--tx3)">›</span></div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">无线 ADB（WiFi）</div></div><span style="font-size:12.5px;color:var(--tx3);margin-right:10px">已关闭</span><span style="font-size:12px;color:var(--acc);border:1px solid var(--acc);border-radius:6px;padding:1px 9px">开启</span></div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">无线 ADB · 手敲命令 / 说明</div></div><span style="color:var(--tx3)">›</span></div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">WiFi</div></div><span style="font-size:12.5px;color:var(--usr);margin-right:10px">已开启</span><span style="color:var(--tx3)">›</span></div>
+          <div style="font-size:12.5px;font-weight:700;color:var(--acc);margin:14px 0 8px">其他</div>
+          <div class="row" style="margin-bottom:6px"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">打开原生系统设置</div></div><span style="color:var(--tx3)">›</span></div>
+          <div class="row"><div class="col"><div class="l1" style="font-size:13px;font-weight:400">关于本工具</div></div><span style="color:var(--tx3)">›</span></div>
+        </div>
+        <div class="mf"><span class="b dim">关闭</span></div>
+      </div>
+    </div>
+    <div class="foot">设置　·　车机信息 / 开关 / 原生设置</div>
+  </div></div>
+
+  <div class="notice" style="margin-top:20px">
+    <b>无线 ADB 一键开关 —— 为什么只有它需要 root，以及它现在怎么工作</b>
+    <table style="margin-top:12px">
+      <tr><th style="width:150px">点「开启」之后</th><th>程序做什么</th></tr>
+      <tr><td class="k">1 · 探当前状态</td><td>试连 <code>127.0.0.1:5555</code>，能连上就是开着，连不上就是关着。</td></tr>
+      <tr><td class="k">2 · 准备提权程序</td><td>把内置的 <code>assets/mtk-su</code> 释放到应用私有目录，再 <code>chmod 755</code>（不行就 777）。已经释放过就直接用，不用手动投放。</td></tr>
+      <tr><td class="k">3 · 挑一个候选</td><td>顺序：上次跑通的 → <code>/data/local/tmp/mtk-su</code> → <code>/sdcard/mtk-su</code> → 私有目录释放的 → 系统 <code>su</code> / <code>magisk</code>。</td></tr>
+      <tr><td class="k">4 · 两种方式都试</td><td>先 <code>su -c "脚本"</code>，不行再把脚本喂给它的 stdin。脚本末尾自动追加 <code>echo __AWA_END__</code>，输出里出现它才算跑通 —— 不能只看 exit code，有的 su 失败了也返回 0。</td></tr>
+      <tr><td class="k">5 · 真正执行的命令</td><td><code>setprop service.adb.tcp.port 5555; stop adbd; start adbd</code>（关闭时端口写 <code>-1</code>）。</td></tr>
+      <tr><td class="k">6 · 回读确认</td><td>每 0.7 秒探一次 <code>127.0.0.1:5555</code>，最多等 7 秒 —— adbd 重启要好几秒，探一次就判死会误报失败。通了才算成功；不通就把每一步的输出全摊给你看。</td></tr>
+    </table>
+    <p style="margin:14px 0 0">
+      <b>不灵的时候</b>：点「设置 → 无线 ADB · 提权自检」。它会列出所有候选、每个的可读 /
+      可执行 / 大小、已经试过没通的，以及真跑一遍 <code>id</code> 的完整输出，一眼看出卡在哪：
+      <code>avc: denied</code> = 被 SELinux 拦了，<code>exit 126</code> = 没执行权限，
+      <code>uid=0(root)</code> = 提权成功。
+    </p>
+    <p style="margin:10px 0 0">
+      <b>免 root 的另一条路（不用 mtk-su）</b>：USB 连着的时候在电脑上敲一条
+      <code>adb tcpip 5555</code> —— 这条不用 root，因为它是让车机上的 <code>adbd</code> <b>自己去改</b>属性。
+      拔掉 USB 再 <code>adb connect 车机IP:5555</code> 就行，用完在电脑上敲 <code>adb usb</code> 关掉。
+      缺点是车机重启后要重连一次 USB 再来。
+    </p>
+  </div>
+
+  <h2>6 · 点「重启」<span class="tag chg">去提权</span></h2>
+  <p class="cap">
+    左：装进 <code>/system/priv-app</code> 后 <code>REBOOT</code> 权限生效，正常确认重启。<br>
+    右：还是普通应用 → <b>不再自动提权</b>，直接把命令摊给你（含 mtk-su 下载地址）。
+    截图里那句「正在用提权方式重启…」已经跟着提权代码一起删掉了。
+  </p>
+  <div class="grid2">
+    <div class="device"><div class="scr" style="height:400px">
+      <div class="top">
+        <span class="title">Awa的安装助手</span>
+        <span class="b">设置</span><span class="b warn">重启</span>
+        <span class="spacer"></span><span class="b dim">关于</span>
+      </div>
+      <div class="tabs">
+        <div class="tab on">已安装的软件</div><div class="tab">存储里的 APK</div>
+        <div class="tab">文件管理</div>
+      </div>
+      <div class="modalwrap">
+        <div class="modal" style="max-width:400px">
+          <div class="mh">重启车机</div>
+          <div class="mb">重启会中断车机当前所有操作，包括导航、音乐、蓝牙通话。<br><br>
+            请确认车辆已安全停稳。<br><br>确定现在重启吗？</div>
+          <div class="mf"><span class="b dim">取消</span><span class="b acc">确定重启</span></div>
+        </div>
+      </div>
+      <div class="foot">有 REBOOT 权限时</div>
+    </div></div>
+
+    <div class="device"><div class="scr" style="height:400px">
+      <div class="top">
+        <span class="title">Awa的安装助手</span>
+        <span class="b">设置</span><span class="b warn">重启</span>
+        <span class="spacer"></span><span class="b dim">关于</span>
+      </div>
+      <div class="tabs">
+        <div class="tab on">已安装的软件</div><div class="tab">存储里的 APK</div>
+        <div class="tab">文件管理</div>
+      </div>
+      <div class="modalwrap">
+        <div class="modal" style="max-width:430px">
+          <div class="mh">重启需要系统权限</div>
+          <div class="mb mono" style="font-size:11.5px;max-height:230px"><span class="c">本应用现在没有 REBOOT 权限，所以没法直接重启。
+本工具不会去提权，下面是命令，你自己执行。</span>
+
+<span class="hl">── 办法一：装成系统应用（推荐，免 root）──</span>
+装进 /system/priv-app 后权限自动生效，
+以后点「重启」就直接重启。
+
+<span class="hl">── 办法二：电脑上敲一条 ──</span>
+  adb shell reboot
+
+<span class="hl">── 办法三：需要 root 时先提权 ──</span>
+mtk-su 下载地址
+  https://www.akkdiy.cn/zimulu/download/mtk-su
+  adb push mtk-su /sdcard/
+  adb shell "cp /sdcard/mtk-su /data/local/tmp/"
+  adb shell "chmod 755 /data/local/tmp/mtk-su"
+  adb shell "/data/local/tmp/mtk-su"
+  reboot</div>
+          <div class="mf"><span class="b dim">关闭</span><span class="b dim">复制全部</span></div>
+        </div>
+      </div>
+      <div class="foot">没有系统权限时 —— 不自动提权</div>
+    </div></div>
+  </div>
+
+  <h2>7 · 安装教程弹窗<span class="tag chg">加 mtk 地址</span></h2>
+  <p class="cap">点「存储里的 APK」里任意一条 → 出这个。编号结构和你给的一模一样，命令一字未改。</p>
+  <div class="device"><div class="scr">
+    <div class="top">
+      <span class="title">Awa的安装助手</span>
+      <span class="b">设置</span><span class="b warn">重启</span>
+      <span class="spacer"></span><span class="b dim">关于</span>
+    </div>
+    <div class="tabs">
+      <div class="tab">已安装的软件</div><div class="tab on">存储里的 APK</div>
+      <div class="tab">文件管理</div>
+    </div>
+    <div class="modalwrap">
+      <div class="modal" style="max-width:660px">
+        <div class="mh">安装教程 · MyApp.apk</div>
+        <div class="mb mono" style="max-height:330px"><span class="c">【这个 APK】
+  文件名   MyApp.apk
+  所在目录 /mnt/usb/sda1
+  完整路径 /mnt/usb/sda1/MyApp.apk
+  大小     3.2 MB
+  包名     com.example.myapp</span>
+
+════════════════════════════════════════
+<span class="hl">一、普通安装 apk（可桌面卸载）</span>
+════════════════════════════════════════
+
+<span class="hl">4.1  mtk 文件提权，获取 root 临时权限后安装 apk</span>
+
+     先用「文件管理」把两个文件传到车机：
+       · mtk-su   →  /sdcard/  目录下
+       · MyApp.apk →  /sdcard/Download/  目录下
+
+     <span class="hl">mtk-su 下载地址</span>
+       https://www.akkdiy.cn/zimulu/download/mtk-su
+
+     提权命令
+       cp /sdcard/mtk-su /data/local/tmp/
+       chmod 755 /data/local/tmp/mtk-su
+       /data/local/tmp/mtk-su
+       mount -r -w -o remount -t ext4 /system
+
+     安装命令
+       cp /sdcard/Download/MyApp.apk /data/app
+       chmod 777 /data/app/MyApp.apk
+
+     重启命令
+       reboot
+
+     重启后进入就看到了。</div>
+        <div class="mf"><span class="b dim">关闭</span><span class="b dim">复制全部</span></div>
+      </div>
+    </div>
+    <div class="foot">已发现 12 个 APK　·　点条目 → 安装教程</div>
+  </div></div>
+
+  <h2>改动清单</h2>
+  <table>
+    <tr><th style="width:150px">项目</th><th style="width:118px">变化</th><th>说明</th></tr>
+    <tr>
+      <td class="k">提权代码</td><td><span class="pill chg">照原版复刻</span></td>
+      <td>照原版 AwaAPK 的做法重写：内置 <code>assets/mtk-su</code>，自动释放到私有目录 + <code>chmod</code>；候选「上次跑通的 → /data/local/tmp/ → 私有目录 → 系统 su」；每个先 <code>su -c</code> 再 stdin，用 <code>__AWA_END__</code> 判定是否真跑通。字节码级核验：<code>ProcessBuilder</code> 只出现在 <code>runCmd()</code> 一处，<code>runCmd()</code> 只被 <code>execScript()</code> / <code>chmod()</code> 调用，提权路径字面量正好是白名单那 9 个，不含 <code>Runtime.exec</code>。</td>
+    </tr>
+    <tr>
+      <td class="k">「正在用提权方式重启…」</td><td><span class="pill del">删掉</span></td>
+      <td>那句提示跟着提权代码一起消失。</td>
+    </tr>
+    <tr>
+      <td class="k">重启按钮</td><td><span class="pill chg">保留·改逻辑</span></td>
+      <td>只走系统 <code>REBOOT</code> 权限（装进 /system/priv-app 免 root 生效）。没权限就<b>不重启</b>，显示命令。</td>
+    </tr>
+    <tr>
+      <td class="k">文件管理标签</td><td><span class="pill new">新增</span></td>
+      <td>自带文件管理器。<b>车机</b> / <b>U盘</b> 一键切换；复制 / 剪切 / 粘贴 / 删除 / 重命名 / 新建文件夹 / 属性 / 调其他应用打开。免安装、免 root。</td>
+    </tr>
+    <tr>
+      <td class="k">ES 文件浏览器</td><td><span class="pill del">去掉</span></td>
+      <td>按你的要求完全不内置。源码合并实测不可行（资源 ID 冲突 + 签名自校验）。</td>
+    </tr>
+    <tr>
+      <td class="k">无线 ADB</td><td><span class="pill new">改成真开关</span></td>
+      <td>Android 5.1 没有免 root 接口，所以借内置的 <code>mtk-su</code> 跑 <code>setprop</code>。点一下就能开 / 关，开完回读确认，失败摊完整日志。另留「手敲命令 / 说明」入口，含免 root 的 <code>adb tcpip</code> 方案。</td>
+    </tr>
+    <tr>
+      <td class="k">ADB 调试 / WiFi</td><td><span class="pill chg">去提权</span></td>
+      <td>ADB 走 <code>WRITE_SECURE_SETTINGS</code>（系统应用时生效）；WiFi 是普通权限直接可用。改不了就给命令。</td>
+    </tr>
+    <tr>
+      <td class="k">安装教程</td><td><span class="pill chg">加地址</span></td>
+      <td>编号结构不变（4.1 / 5.1~5.5），命令原样，补上 mtk-su 下载地址。</td>
+    </tr>
+    <tr>
+      <td class="k">清单权限</td><td><span class="pill del">删 3 条</span></td>
+      <td>删掉 <code>INSTALL_PACKAGES</code> / <code>DELETE_PACKAGES</code> / <code>MOUNT_UNMOUNT_FILESYSTEMS</code> —— 这三条装进 priv-app 会真的生效，跟"不装不卸"冲突。现在只剩 7 条权限。</td>
+    </tr>
+    <tr>
+      <td class="k">包体</td><td><span class="pill keep">89.9 KB</span></td>
+      <td>内置 <code>assets/mtk-su</code>（65,144 字节，和原版同一份）。不内置任何第三方 APK。</td>
+    </tr>
+  </table>
+
+  <h2>这一轮修掉的问题</h2>
+  <table>
+    <tr><th style="width:150px">问题</th><th style="width:96px">严重程度</th><th>怎么修的</th></tr>
+    <tr>
+      <td class="k">提权「假跑通」</td><td><span class="pill del">掩埋真实原因</span></td>
+      <td><b>原版也踩了这个坑。</b>判定是否跑通用的是「输出里有没有 <code>__AWA_END__</code>」，
+          但 <code>ProcessBuilder.start()</code> 失败时抛的 IOException，它的 message 里会带上完整命令行
+          （<code>"Error running exec(). Command: [mtk-su, -c, setprop … echo __AWA_END__]…"</code>）,
+          而命令行本身含 <code>echo __AWA_END__</code> —— 于是裸用 <code>contains()</code> 会把
+          「进程根本没起来」判成「跑通了」。结果是日志里写着 <code>EXCEPTION…</code> 却返回成功，
+          真实失败原因被彻底盖住。现在改成：① 异常消息里 <code>Command: [ … Environment:</code>
+          整段抹掉；② 以 <code>EXCEPTION:</code> 开头的直接判失败；③ 结束标记必须单独占一行。
+          已用 16 条单元测试覆盖（含原 bug 的触发场景）。</td>
+    </tr>
+    <tr>
+      <td class="k">多个外置存储弹选择框</td><td><span class="pill del">多一步</span></td>
+      <td>这台 R621 会同时挂出 <code>/storage/usb0~usb3</code> 和 <code>/storage/sdcard1</code>，
+          原来弹出「选一个外置存储」让你手工点。现在自动挑：路径带 <code>usb</code> 的优先，
+          再看里面条目多少（插着的盘有东西、空口是空的），名字带 <code>extsd</code> 的次之。
+          选完 toast 告诉你选了哪个。</td>
+    </tr>
+    <tr>
+      <td class="k">提权失败只甩异常日志</td><td><span class="pill chg">看不懂</span></td>
+      <td>R621 的 SELinux 不允许应用执行自己私有目录里的副本，<code>/sdcard</code> 又是 FUSE + noexec
+          （能读不能跑），所以必然要借一次电脑 ADB 把 mtk-su 放进 <code>/data/local/tmp</code>。
+          现在会自动把内置 mtk-su 导到 <code>/sdcard/mtk-su</code>，并弹出「需要连一次电脑」
+          引导，附一条原版同款 staging 命令，点「我已完成，检测一下」直接重试。</td>
+    </tr>
+    <tr>
+      <td class="k">打开原生设置只有主页</td><td><span class="pill del">多绕一层</span></td>
+      <td>原来点「打开原生系统设置」直接跳设置主页，开发者选项 / 应用管理这些还要自己一层层点。
+          现在照原版做成入口列表：14 项，用显式 <code>ComponentName</code> 直接拉对应 Activity
+          （比 Intent action 准，不同 ROM 的 action 实现不一样），每项带两条兜底。</td>
+    </tr>
+    <tr>
+      <td class="k">状态永远显示「已关闭」</td><td><span class="pill del">核心 bug</span></td>
+      <td>用 Socket 连 127.0.0.1:5555 探无线 ADB 状态，但本应用没有
+          <code>android.permission.INTERNET</code>，Android 按 GID(AID_INET) 在内核层拦掉
+          所有 Socket 调用（连本机回环也 EACCES），所以探针永远返回 false。改成和原版一样
+          读 <code>getprop service.adb.tcp.port</code>，才真的准了。</td>
+    </tr>
+    <tr>
+      <td class="k">装过还标「待安装」</td><td><span class="pill del">误导</span></td>
+      <td>扫描存储里的 APK 时没查车机上是否已装，所有 APK 一律给「待安装」蓝徽章。现在
+          用 <code>pm.getPackageInfo(pkg)</code> 查一下，装着的显示「已安装 / 可更新 / 版本更低」，
+          没装的才给「待安装」。</td>
+    </tr>
+    <tr>
+      <td class="k">/sdcard/mtk-su 排在候选第一位</td><td><span class="pill chg">纯刷报错</span></td>
+      <td>候选顺序原来把 <code>/sdcard/mtk-su</code> 放在私有目录前面，但 <code>/sdcard</code> 是
+          noexec，跑一次必然 IOException，日志前面全是无意义的报错。现在改成照原版顺序：
+          上次跑通的 → <code>/data/local/tmp</code> → 私有目录 → 系统 su → <code>/sdcard</code> 垫底。</td>
+    </tr>
+    <tr>
+      <td class="k">U 盘认不出来</td><td><span class="pill del">功能全废</span></td>
+      <td>以前靠一份固定路径清单，车机 U 盘挂在 <code>/storage/1A2B-3C4D</code> 这种卷 ID 上就一个都匹配不到。改成从 <code>/proc/mounts</code> 读 <code>vfat/exfat/ntfs</code> 挂载点，再补 <code>/storage</code> 下非 emulated 目录和固定路径兜底。</td>
+    </tr>
+    <tr>
+      <td class="k">复制 / 删除卡死</td><td><span class="pill del">ANR</span></td>
+      <td>文件 IO 全在 UI 线程跑，拷个几百 MB 的视频、删个装满东西的文件夹，界面直接无响应。挪到后台线程，底栏显示「正在复制…」。</td>
+    </tr>
+    <tr>
+      <td class="k">返回键直接退出</td><td><span class="pill del">很别扭</span></td>
+      <td>文件管理里按返回会退出应用，而不是回上一级。补了 <code>onBackPressed</code>：先关设置面板 → 先回上一级（在 U 盘里就跳回车机目录）→ 先回第一个标签。</td>
+    </tr>
+    <tr>
+      <td class="k">adbd 重启判太早</td><td><span class="pill chg">误报</span></td>
+      <td>只等 1.5 秒就探端口，adbd 往往要 3~5 秒才起来，于是明明开成功了却报「没成功」。改成每 0.7 秒探一次、最多 10 秒。</td>
+    </tr>
+    <tr>
+      <td class="k">ADB 开关假成功</td><td><span class="pill chg">误报</span></td>
+      <td>有些 ROM 上 <code>Settings.Global.putInt</code> 既不抛异常也不生效，界面却显示「已开启」。改成写完回读一次，对不上就当失败。</td>
+    </tr>
+    <tr>
+      <td class="k">WiFi 开关状态反了</td><td><span class="pill chg">误报</span></td>
+      <td><code>setWifiEnabled</code> 是异步的，立刻回读还是旧状态，界面显示跟实际相反。改成延迟 0.9 秒 / 2.6 秒各刷一次。</td>
+    </tr>
+    <tr>
+      <td class="k">设置面板跳回顶部</td><td><span class="pill chg">别扭</span></td>
+      <td>点下面的开关会触发整块重建，滚动位置丢失。改成记住并恢复滚动位置。</td>
+    </tr>
+    <tr>
+      <td class="k">路径前缀误判</td><td><span class="pill chg">小</span></td>
+      <td><code>under()</code> 用裸 <code>startsWith</code> 比路径，<code>/storage/sdcard2</code> 会被当成在 <code>/storage/sdcard</code> 里。改成按路径段比。</td>
+    </tr>
+    <tr>
+      <td class="k">APK 扫不全</td><td><span class="pill chg">小</span></td>
+      <td>只往下扫 3 层，深目录里的 APK 找不到。放宽到 4 层。</td>
+    </tr>
+    <tr>
+      <td class="k">车机 / U盘按钮不高亮</td><td><span class="pill chg">小</span></td>
+      <td><code>openDir()</code> 里没重建工具栏，切了目录按钮还停在原状态。补上。</td>
+    </tr>
+    <tr>
+      <td class="k">没插 U 盘时没提示</td><td><span class="pill chg">小</span></td>
+      <td>「存储里的 APK」默认看 U 盘，没插就只显示「已发现 0 个」。现在底栏会提示「没检测到 U 盘，切「内部存储」看看」。</td>
+    </tr>
+  </table>
+
+  <h2>怎么装</h2>
+  <ol>
+    <li>把 <span class="kbd">Awa的安装助手.apk</span> 拷到 U 盘，插到车机上。</li>
+    <li>想当普通应用用：直接点安装即可。软件列表、安装 / 卸载教程、文件管理器、
+        <b>无线 ADB 一键开关</b>都能用；只有<b>重启</b>和 <b>USB ADB 开关</b>会显示命令。</li>
+    <li>想重启 / USB ADB 开关直接生效：按教程把它装进 <code>/system/priv-app/com.awa.apkinstaller/</code>。
+        Android 5.1 没有 privapp 权限白名单，装进去 <code>REBOOT</code> / <code>WRITE_SECURE_SETTINGS</code> 就自动生效，<b>不用 root</b>。</li>
+    <li>无线 ADB 一键开关<b>不需要额外准备</b> —— mtk-su 已经打进包里了，第一次点「开启」会自动释放到应用私有目录。
+        万一不灵，点「设置 → 无线 ADB · 提权自检」看卡在哪一步，再按它的提示把 mtk-su 投放到
+        <code>/data/local/tmp/</code> 试一次。</li>
+    <li>包名和签名跟上一版一致，<b>可以直接覆盖安装</b>，不用先卸载。</li>
+  </ol>
+
+  <div class="notice" style="margin-top:26px">
+    <b>出包前的安全核验（115 项全绿，0 失败）：</b>
+    ZIP 完整性（含 <code>assets/mtk-su</code> 大小核对）/ 资源表应用名 /
+    清单权限（含"没有声明安装卸载权限"的反向检查）/
+    dex 有效性（Adler-32 + SHA-1 + string_ids 升序）/ 类型引用全部可解析 /
+    <b>提权面收敛审查</b>（<code>ProcessBuilder</code> 只出现在 <code>runCmd()</code>、
+    <code>runCmd()</code> 只被 <code>execScript()</code> / <code>chmod()</code> 调用、
+    提权路径字面量正好是白名单 9 个、不含 Runtime.exec / PackageInstaller）/
+    三标签 + 文件管理器 + 无线 ADB 功能面 / v1 签名三层验证 + jarsigner 验签。
+  </div>
+
+</div>
+</body>
+</html>

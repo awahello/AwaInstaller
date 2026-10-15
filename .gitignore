@@ -1,0 +1,35 @@
+# ---- 密钥！绝不能提交 ----
+tools/awa_key.pem
+tools/awa_cert.pem
+*.pem
+*.p12
+*.pfx
+*.keystore
+*.jks
+
+# ---- 编译产物 ----
+out/
+out_dex/
+dist/
+*.class
+*.dex
+__pycache__/
+
+# ---- 第三方二进制 / 构建工具（不在仓库里，自己下）----
+android-all-22.jar
+r8.jar
+apktool.jar
+*.zip
+
+# ---- 系统 / 编辑器 ----
+.DS_Store
+Thumbs.db
+nul
+.idea/
+.vscode/
+*.iml
+*.log
+
+# ---- 其它 ----
+node_modules/
+.env
