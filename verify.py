@@ -13,10 +13,15 @@ import sys
 import zipfile
 import zlib
 
-WS = 'D:/WorkBuddy AI/2026-10-15-10-11-25'
-APK = os.path.join(WS, 'awa_new', 'dist', 'Awa的安装助手.apk')
-JAR = os.path.join(WS, 'tools', 'android-all-22.jar')
-JDK = os.path.join(WS, 'tools', 'jdk-17.0.2', 'bin', 'jarsigner.exe')
+WS = os.path.dirname(os.path.abspath(__file__))
+APK = os.environ.get('APK_PATH', os.path.join(WS, 'dist', 'Awa的安装助手.apk'))
+JAR = os.environ.get('ANDROID_JAR', os.path.join(WS, 'tools', 'android-all-22.jar'))
+JDK = os.environ.get('JDK_BIN', os.path.join(WS, 'tools', 'jdk-17.0.2', 'bin', 'jarsigner.exe'))
+
+if not os.path.exists(APK):
+    print('找不到 APK：%s' % APK)
+    print('先跑 build.sh 出包，或用 APK_PATH=/path/to/x.apk 指定。')
+    sys.exit(2)
 
 ok = True
 
@@ -178,21 +183,25 @@ print()
 print('=' * 68)
 print('5. 类型引用全部可解析')
 print('=' * 68)
-jar = zipfile.ZipFile(JAR)
-inj = set()
-for nm in jar.namelist():
-    if nm.endswith('.class'):
-        inj.add('L' + nm[:-6] + ';')
-CORE = ('Ljava/', 'Ljavax/', 'Lsun/', 'Ljdk/', 'Lorg/w3c/', 'Lorg/xml/',
-        'Lorg/json/', 'Lorg/apache/', 'Llibcore/', 'Ldalvik/')
-missing = []
-for t in types:
-    if not t.startswith('L') or t in defined or t in inj:
-        continue
-    if t.startswith(CORE):
-        continue
-    missing.append(t)
-chk(not missing, '无悬空类型引用（%s）' % (sorted(set(missing)) if missing else '全部解析'))
+if os.path.exists(JAR):
+    jar = zipfile.ZipFile(JAR)
+    inj = set()
+    for nm in jar.namelist():
+        if nm.endswith('.class'):
+            inj.add('L' + nm[:-6] + ';')
+    CORE = ('Ljava/', 'Ljavax/', 'Lsun/', 'Ljdk/', 'Lorg/w3c/', 'Lorg/xml/',
+            'Lorg/json/', 'Lorg/apache/', 'Llibcore/', 'Ldalvik/')
+    missing = []
+    for t in types:
+        if not t.startswith('L') or t in defined or t in inj:
+            continue
+        if t.startswith(CORE):
+            continue
+        missing.append(t)
+    chk(not missing, '无悬空类型引用（%s）' % (sorted(set(missing)) if missing else '全部解析'))
+else:
+    print('  [SKIP] 未找到 %s（仓库不内置约 40MB 的 SDK jar）' % JAR)
+    print('         想看这一项就 ANDROID_JAR=/path/to/android-all-22.jar python3 verify.py')
 
 print()
 print('=' * 68)
@@ -376,6 +385,16 @@ chk(b'Landroid/content/SharedPreferences;' in dex, '引用了 SharedPreferences'
 chk(b'Landroid/os/Handler;' in dex, '引用了 Handler（倒计时滴答）')
 chk(b'Landroid/graphics/Canvas;' in dex, '引用了 Canvas（自绘开关）')
 chk(b'Landroid/graphics/Paint;' in dex, '引用了 Paint（自绘开关）')
+for s in ('读取失败', '打开原生系统设置'):
+    chk(s.encode('utf-8') in dex, '面板兜底文案「%s」存在' % s)
+try:
+    _src = open(os.path.join(WS, 'src/com/awa/apkinstaller/MainActivity.java'),
+                encoding='utf-8', errors='replace').read()
+except Exception:
+    _src = ''
+chk('seen.add(idKey)' in _src and 'f.lastModified()' in _src,
+    '扫描按「文件名+大小+修改时间」再挡一道（同一盘多处挂载不会出现两个）')
+chk('safeStorageInfo' in _src, '面板取值有兜底，单行读数出错不会让整块面板白屏')
 
 print()
 print('  ── 存储里的 APK：装过的不能再标「待安装」──')

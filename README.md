@@ -147,7 +147,7 @@ export R8_JAR=/path/to/r8.jar
 export PYTHON=python3
 
 ./build.sh          # javac → d8 → 打包签名
-python3 verify.py   # 164 项出包校验
+python3 verify.py   # 168 项出包校验
 ```
 
 产物在 `dist/`，第一次构建会生成签名私钥 `tools/awa_key.pem`（**已在 .gitignore 里，别提交**）。
@@ -188,7 +188,7 @@ python3 verify.py   # 164 项出包校验
 ├── resources.arsc           应用名已改成「Awa的安装助手」
 ├── build.sh                 编译流水线
 ├── build_apk.py             装 APK + v1 签名
-├── verify.py                164 项出包校验
+├── verify.py                168 项出包校验
 ├── src/
 │   └── com/awa/apkinstaller/
 │       ├── MainActivity.java    全部 UI 和功能（约 3000 行）
