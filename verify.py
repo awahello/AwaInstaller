@@ -395,6 +395,10 @@ except Exception:
 chk('seen.add(idKey)' in _src and 'f.lastModified()' in _src,
     '扫描按「文件名+大小+修改时间」再挡一道（同一盘多处挂载不会出现两个）')
 chk('safeStorageInfo' in _src, '面板取值有兜底，单行读数出错不会让整块面板白屏')
+chk(b'settings put global adb_enabled ' in dex,
+    'USB ADB 开关走提权脚本 settings put global adb_enabled（原版同款）')
+chk('showAdbFail' in _src and 'DevelopmentSettingsActivity' in _src,
+    'ADB 开关拿不到权限时提供「去开发者选项」跳转按钮')
 
 print()
 print('  ── 存储里的 APK：装过的不能再标「待安装」──')

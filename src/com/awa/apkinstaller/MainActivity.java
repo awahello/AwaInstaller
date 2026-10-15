@@ -2116,37 +2116,56 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 切 ADB 调试。先试直接写 Settings.Global（装进 /system/priv-app 就能成），
-     * 写不了才提示用户。写完一定回读 —— 有些 ROM putInt 既不抛异常也不生效。
+     * 切 ADB 调试（USB）。
+     *
+     * 顺序照原版：先用提权脚本写 `settings put global adb_enabled 1/0`。
+     *
+     * 车机自带的设置能直接开这一项，是因为它的设置应用是系统应用，
+     * 自带 WRITE_SECURE_SETTINGS；本工具装在 /data/app 里是普通应用，
+     * Settings.Global.putInt 会被这个权限挡住 —— 只有装进
+     * /system/priv-app 之后 putInt 才通。所以主通道是提权脚本。
+     *
+     * 写完一定回读 —— 有些 ROM 写进去既不报错也不生效。
      */
     private void doAdbToggle(final boolean on) {
         adbBusy = true;
         if (adbStateText != null) adbStateText.setText("处理中…");
         if (adbToggle != null) adbToggle.setUsable(false);
+        toast(on ? "正在开启 ADB 调试…" : "正在关闭 ADB 调试…");
 
         new Thread(new Runnable() {
             @Override public void run() {
-                boolean wrote = false;
-                try {
-                    Settings.Global.putInt(getContentResolver(),
-                            Settings.Global.ADB_ENABLED, on ? 1 : 0);
-                    wrote = true;
-                } catch (Throwable t) { }
+                // 一、提权脚本（原版同款路子）
+                String script = "settings put global adb_enabled " + (on ? 1 : 0)
+                        + "\necho AWA_ADB_OK";
+                StringBuilder log = new StringBuilder();
+                boolean ran = execScript(script, log);
+                final String slog = log.toString();
+
+                // 二、提权通道没有的话，再试直接写（只有特权应用能成）
+                if (!ran) {
+                    try {
+                        Settings.Global.putInt(getContentResolver(),
+                                Settings.Global.ADB_ENABLED, on ? 1 : 0);
+                        ran = true;
+                    } catch (Throwable t) { }
+                }
+
+                // 三、回读，写进去不算数，读回来才算
                 int now = readAdbEnabled();
-                final boolean okk = wrote && now == (on ? 1 : 0);
-                final int got = now;
+                final boolean okk = now == (on ? 1 : 0);
+                final boolean rootOk = ran;
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
                         adbBusy = false;
                         fillSettings();
                         if (okk) {
                             toast(on ? "ADB 调试已开启" : "ADB 调试已关闭");
-                        } else if (got < 0) {
-                            toast("读不到 ADB 状态");
-                            showText("ADB 状态读不到", adbHelp(on));
+                        } else if (rootOk) {
+                            showText(on ? "开启 ADB 调试没成功" : "关闭 ADB 调试没成功",
+                                    "执行过程\n\n" + slog + "\n" + adbHelp(on));
                         } else {
-                            toast("改不了：本应用没有 WRITE_SECURE_SETTINGS 权限");
-                            showText("ADB 开关改不了", adbHelp(on));
+                            showAdbFail(on);
                         }
                     }
                 });
@@ -2154,17 +2173,69 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    /**
+     * ADB 开关两条路都没走通时的引导。
+     *
+     * 有一说一：车机自带的开发者选项能直接开这一项，是因为它的设置应用
+     * 是系统应用、自带 WRITE_SECURE_SETTINGS；本工具是装在 /data/app 里的
+     * 普通应用，拿不到这个权限。所以要么投一次 mtk-su（投完本工具就能
+     * 直接开），要么把本工具装进 /system/priv-app。急着用就先跳去车机
+     * 自带的开发者选项手动开 —— 一样能用的。
+     */
+    private void showAdbFail(final boolean on) {
+        new AlertDialog.Builder(this)
+                .setTitle(on ? "ADB 调试开不了" : "ADB 调试关不了")
+                .setMessage("本工具试过了，没拿到能改这一项的权限。\n\n"
+                        + "车机自带的开发者选项能直接开这一项 —— 它的设置应用"
+                        + "是系统应用，自带 WRITE_SECURE_SETTINGS；本工具是普通"
+                        + "应用，拿不到这个权限。\n\n"
+                        + "想在本工具里直接开，两条路：\n"
+                        + "① 连一次电脑，把 mtk-su 投进 /data/local/tmp：\n"
+                        + "    " + stagingCommand() + "\n"
+                        + "② 把本工具装进 /system/priv-app\n\n"
+                        + "急着用的话，点下面的按钮直接跳去车机自带的"
+                        + "开发者选项，在那里一样能开关。")
+                .setPositiveButton("去开发者选项", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        openNativeSetting(
+                                "com.android.settings/com.android.settings.Settings$DevelopmentSettingsActivity",
+                                "android.settings.APPLICATION_DEVELOPMENT_SETTINGS");
+                        if (on) {
+                            toast("把最上面那个总开关打开就行，USB 调试就在下面");
+                        } else {
+                            toast("把「USB调试」关掉就行");
+                        }
+                    }
+                })
+                .setNeutralButton("复制投放命令", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        try {
+                            ClipboardManager cm = (ClipboardManager)
+                                    getSystemService(Context.CLIPBOARD_SERVICE);
+                            cm.setPrimaryClip(ClipData.newPlainText("adb", stagingCommand()));
+                            toast("已复制投放命令");
+                        } catch (Throwable t) {
+                            toast("复制失败");
+                        }
+                    }
+                })
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+
     private String adbHelp(boolean on) {
         return "为什么改不了\n"
                 + "  Settings.Global.ADB_ENABLED 需要 android.permission.WRITE_SECURE_SETTINGS，\n"
                 + "  这是 signature|privileged 级权限，普通应用拿不到。\n"
+                + "  车机自带的开发者选项能直接开，是因为它的设置应用是系统应用。\n"
                 + "\n"
-                + "两条解决办法\n"
-                + "  ① 把这个应用装进 /system/priv-app（本工具「存储里的 APK」里有完整教程）。\n"
-                + "     Android 5.1 没有 privapp 权限白名单，装进去就自动拿到，不用 root。\n"
+                + "在本工具里直接开，两条路\n"
+                + "  ① 连一次电脑，把 mtk-su 投进 /data/local/tmp（投一次永久有效）：\n"
+                + "     " + stagingCommand() + "\n"
+                + "  ② 或者把本工具装进 /system/priv-app\n"
                 + "\n"
-                + "  ② 或者你自己在电脑上用 ADB 敲一条：\n"
-                + "     adb shell settings put global adb_enabled " + (on ? "1" : "0") + "\n"
+                + "电脑上手动改这一项：\n"
+                + "  adb shell settings put global adb_enabled " + (on ? "1" : "0") + "\n"
                 + "\n"
                 + "查看当前状态：\n"
                 + "  adb shell settings get global adb_enabled\n"
