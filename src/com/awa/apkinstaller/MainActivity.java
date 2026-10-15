@@ -865,6 +865,12 @@ public class MainActivity extends Activity {
                 path = f.getAbsolutePath();
             }
             if (!seen.add(path)) continue;
+            // 同一块盘被挂到多个路径时（/mnt/media_rw/xxx 和 /storage/xxx
+            // 这种绑定挂载，getCanonicalPath 解析不出来），同一个 APK 会
+            // 带着不同的绝对路径出现两遍，列表里就「显示两个」。
+            // 名字、大小、修改时间全一样的基本就是同一个文件，再挡一道。
+            String idKey = "id:" + name + "|" + f.length() + "|" + f.lastModified();
+            if (!seen.add(idKey)) continue;
             out.add(makeApkEntry(f, name, path));
         }
     }
@@ -1569,6 +1575,19 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * 存储信息的兜底读数 —— 读数炸了只让这一行显示「读取失败」，
+     * 不能把整块面板拖白（面板上只要有一行addView之前抛异常，
+     * 后面的行就全都没了，用户看到的就是「只有一行」）。
+     */
+    private String safeStorageInfo() {
+        try {
+            return storageInfo();
+        } catch (Throwable t) {
+            return "读取失败";
+        }
+    }
+
+    /**
      * 面板的行一次性建好（照原版的结构），之后只刷状态、不重建。
      *
      * 之前是每次点开关就把 settingsBox.removeAllViews() 重建一遍 ——
@@ -1642,7 +1661,7 @@ public class MainActivity extends Activity {
                 null));
         settingsBox.addView(dlgRow("机型",
                 dlgValue((Build.MANUFACTURER + " " + Build.MODEL).trim(), P_OFF), null));
-        settingsBox.addView(dlgRow("存储", dlgValue(storageInfo(), P_OFF), null));
+        settingsBox.addView(dlgRow("存储", dlgValue(safeStorageInfo(), P_OFF), null));
         settingsBox.addView(dlgRow("当前身份", dlgValue(
                 hasPerm("android.permission.REBOOT")
                         ? "系统应用（重启 / ADB 开关免 root）" : "普通应用", P_OFF), null));
@@ -1667,8 +1686,8 @@ public class MainActivity extends Activity {
      */
     private void fillSettings() {
         if (settingsBox == null) return;
-
-        String ip = localIpRaw();
+        try {
+            String ip = localIpRaw();
         lastIp = ip;
         if (ipValueText != null) {
             ipValueText.setText(ip == null ? "未连接" : ip);
@@ -1708,6 +1727,9 @@ public class MainActivity extends Activity {
         }
 
         updateWifiExtra();
+        } catch (Throwable t) {
+            // 状态刷新出错不能让面板崩 —— 行都建好了，状态下轮再刷
+        }
     }
 
     /**

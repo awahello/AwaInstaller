@@ -142,7 +142,7 @@
     查已装软件、看安装卸载教程、自带文件管理器、一键开无线 ADB。<b>不装不卸；只有无线 ADB 一项会借 root。</b>
   </p>
   <p class="meta">
-    包名 com.awa.apkinstaller　·　版本 1.0.0　·　92,076 字节　·　md5 ac62820e84721e401b8f85b5a917d723<br>
+    包名 com.awa.apkinstaller　·　版本 1.0.0　·　92,242 字节　·　md5 5893ff0846a0d6f4f7f296b09f30a3a4<br>
     出包校验 <b>164 项全绿 / 0 失败</b>　·　签名密钥与上一版相同，<b>可直接覆盖安装</b>
   </p>
 
@@ -662,6 +662,21 @@ mtk-su 下载地址
   <h2>这一轮修掉的问题</h2>
   <table>
     <tr><th style="width:150px">问题</th><th style="width:96px">严重程度</th><th>怎么修的</th></tr>
+    <tr>
+      <td class="k">同一个 APK「显示两个」</td><td><span class="pill del">重复</span></td>
+      <td>同一块 U 盘在 R621 上会被挂到多个路径（<code>/mnt/media_rw/1A2B-3C4D</code> 和
+          <code>/storage/1A2B-3C4D</code> 这种<b>绑定挂载</b>，<code>getCanonicalPath()</code>
+          只解得了软链接、解不了绑定挂载），同一个 APK 就带着两条不同绝对路径被扫进来，
+          列表里出现两遍。现在除绝对路径外，再按「文件名 + 大小 + 修改时间」挡一道 ——
+          绑定挂载下这三项完全一致，真正的两份不同文件大小或时间总会有差别，不会误伤。</td>
+    </tr>
+    <tr>
+      <td class="k">设置面板可能只剩一行</td><td><span class="pill chg">防御</span></td>
+      <td>面板是逐行 addView 搭起来的，万一某一行在 addView <b>之前</b>抛了异常
+          （比如存储信息读数那一步），后面的行就整块消失，看起来就是「只有一行、其他全空」。
+          现在所有取值全部带兜底：读数失败只让那一行显示「读取失败」，状态刷新整体包在
+          try 里，任何单点出错都不能让面板白屏。</td>
+    </tr>
     <tr>
       <td class="k">提权「假跑通」</td><td><span class="pill del">掩埋真实原因</span></td>
       <td><b>原版也踩了这个坑。</b>判定是否跑通用的是「输出里有没有 <code>__AWA_END__</code>」，

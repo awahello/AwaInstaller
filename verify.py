@@ -13,10 +13,10 @@ import sys
 import zipfile
 import zlib
 
-WS = os.path.dirname(os.path.abspath(__file__))
-APK = os.path.join(WS, 'dist', 'Awa的安装助手.apk')
-JAR = os.environ.get('ANDROID_JAR', os.path.join(WS, 'tools', 'android-all-22.jar'))
-JDK = os.environ.get('JDK_BIN', os.path.join(WS, 'tools', 'jdk-17.0.2', 'bin', 'jarsigner.exe'))
+WS = 'D:/WorkBuddy AI/2026-10-15-10-11-25'
+APK = os.path.join(WS, 'awa_new', 'dist', 'Awa的安装助手.apk')
+JAR = os.path.join(WS, 'tools', 'android-all-22.jar')
+JDK = os.path.join(WS, 'tools', 'jdk-17.0.2', 'bin', 'jarsigner.exe')
 
 ok = True
 
