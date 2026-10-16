@@ -103,6 +103,8 @@ public class MainActivity extends Activity {
     private static final int C_BG = 0xFF14161A;
     private static final int C_BAR = 0xFF1D2026;
     private static final int C_CARD = 0xFF22262E;
+    private static final int C_SEL = 0xFF1E3A5F;      // 多选模式下已勾选的行
+    private static final int C_BOX = 0xFF3A4150;      // 多选模式下没勾选的方框
     private static final int C_TX = 0xFFE9EDF3;
     private static final int C_TX2 = 0xFF9BA5B4;
     private static final int C_TX3 = 0xFF6C7787;
@@ -162,6 +164,16 @@ public class MainActivity extends Activity {
     private File curDir;
     private final List<File> clip = new ArrayList<File>();
     private boolean clipCut = false;
+    /**
+     * 多选模式。开着的时候点条目不进目录、只勾选，顶部工具栏换成
+     * 「全选 / 复制 / 剪切 / 删除 / 取消」，返回键先退出多选。
+     */
+    private boolean selMode = false;
+    /**
+     * 已勾选的条目，存绝对路径 —— 不能存 FileEntry 对象：openDir() 每刷新
+     * 一次就把 FileEntry 全重建了，存对象的话勾选状态一刷新就丢。
+     */
+    private final Set<String> selPaths = new HashSet<String>();
     private List<File> usbCache = null;      // usbRoots() 的短时缓存
     private long usbCacheAt = 0;
 
@@ -228,6 +240,7 @@ public class MainActivity extends Activity {
             settingsDialog.dismiss();
             return;
         }
+        if (tab == TAB_FILES && selMode) { exitSel(); return; }   // 多选中 → 先退出多选
         if (tab == TAB_FILES && curDir != null) {
             File home = innerHome();
             if (under(curDir, home)) {
@@ -359,6 +372,10 @@ public class MainActivity extends Activity {
                     h = buildRow();
                 }
                 try {
+                    // 行是复用的，跨标签也会复用 —— 每次先还原成默认态，
+                    // 免得文件管理页勾选过的行背景串到别的标签上去
+                    h.sel.setVisibility(View.GONE);
+                    h.row.setBackgroundColor(C_CARD);
                     if (tab == TAB_INSTALLED) {
                         if (p >= 0 && p < apps.size()) fillAppRow(h, apps.get(p));
                     } else if (tab == TAB_STORAGE) {
@@ -384,7 +401,10 @@ public class MainActivity extends Activity {
                     } else if (tab == TAB_STORAGE) {
                         if (p >= 0 && p < apks.size()) showInstallTutorial(apks.get(p));
                     } else {
-                        if (p >= 0 && p < files.size()) openEntry(files.get(p));
+                        if (p >= 0 && p < files.size()) {
+                            FileEntry e = files.get(p);
+                            if (selMode) toggleSel(e); else openEntry(e);
+                        }
                     }
                 } catch (Throwable t) {
                     toast("出错了：" + t);
@@ -395,7 +415,10 @@ public class MainActivity extends Activity {
             @Override public boolean onItemLongClick(AdapterView<?> a, View v, int p, long id) {
                 if (tab != TAB_FILES) return false;
                 try {
-                    if (p >= 0 && p < files.size()) showFileMenu(files.get(p));
+                    if (p >= 0 && p < files.size()) {
+                        FileEntry e = files.get(p);
+                        if (selMode) toggleSel(e); else showFileMenu(e);
+                    }
                 } catch (Throwable t) {
                     toast("出错了：" + t);
                 }
@@ -466,6 +489,7 @@ public class MainActivity extends Activity {
 
     // ------------------------------------------------------------ 标签 / 工具栏
     private void showTab(int t) {
+        if (t != TAB_FILES && selMode) { selMode = false; selPaths.clear(); }  // 离开文件管理就收掉多选
         tab = t;
         styleTab(tabBtn0, t == TAB_INSTALLED);
         styleTab(tabBtn1, t == TAB_STORAGE);
@@ -504,6 +528,25 @@ public class MainActivity extends Activity {
                     }
                 }));
             }
+        } else if (selMode) {
+            // ---- 多选模式：整条工具栏换成批量操作
+            final boolean any = selPaths.size() > 0;
+            final boolean all = allSel();
+            toolbar.addView(chipBtn(all ? "全不选" : "全选", all, false, new Runnable() {
+                @Override public void run() { selSelectAll(); }
+            }));
+            toolbar.addView(chipBtn("复制", any, true, new Runnable() {
+                @Override public void run() { selClip(false); }
+            }));
+            toolbar.addView(chipBtn("剪切", any, true, new Runnable() {
+                @Override public void run() { selClip(true); }
+            }));
+            toolbar.addView(chipBtn("删除", any, true, new Runnable() {
+                @Override public void run() { selDelete(); }
+            }));
+            toolbar.addView(chipBtn("取消", false, true, new Runnable() {
+                @Override public void run() { exitSel(); }
+            }));
         } else {
             final List<File> usb = usbRootsCached();
             toolbar.addView(chipBtn("车机", under(curDir, innerHome()), false, new Runnable() {
@@ -523,6 +566,9 @@ public class MainActivity extends Activity {
             }));
             toolbar.addView(chipBtn("刷新", false, true, new Runnable() {
                 @Override public void run() { openDir(curDir); }
+            }));
+            toolbar.addView(chipBtn("多选", false, true, new Runnable() {
+                @Override public void run() { enterSel(null); }
             }));
         }
         View sp = new View(this);
@@ -957,8 +1003,11 @@ public class MainActivity extends Activity {
             String p = curDir == null ? "—" : curDir.getAbsolutePath();
             String c = clip.size() > 0
                     ? "　·　剪贴板 " + clip.size() + " 项（" + (clipCut ? "剪切" : "复制") + "）" : "";
-            footerView.setText(p + "　·　" + files.size() + " 项" + c
-                    + "　·　点进入 / 长按条目 → 复制·剪切·重命名·删除·属性");
+            String s = selMode ? "　·　已选 " + selPaths.size() + " / " + files.size() + " 项" : "";
+            String tip = selMode
+                    ? "　·　点条目勾选，顶部按钮批量复制·剪切·删除"
+                    : "　·　点进入 / 长按条目 → 复制·剪切·重命名·删除·属性";
+            footerView.setText(p + "　·　" + files.size() + " 项" + s + c + tip);
         }
     }
 
@@ -967,6 +1016,7 @@ public class MainActivity extends Activity {
         LinearLayout outer, row, col;
         ImageView icon;
         TextView glyph;          // 没有真实图标时用的文字占位（DIR / APK …）
+        TextView sel;            // 多选模式的勾选方框（蓝=已选，灰=未选）
         TextView l1, l2, l3, l4, badge;
     }
 
@@ -984,6 +1034,16 @@ public class MainActivity extends Activity {
         h.row.setPadding(dp(14), dp(11), dp(14), dp(11));
         h.outer.addView(h.row, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // 多选方框。用纯色块而不是 ✓ 字符 —— 车机字体里那个字符不一定有，
+        // 画成色块最保险。非多选模式下是 GONE，不影响另外两个标签。
+        h.sel = new TextView(this);
+        h.sel.setSingleLine(true);
+        LinearLayout.LayoutParams selLp = new LinearLayout.LayoutParams(dp(18), dp(18));
+        selLp.rightMargin = dp(11);
+        h.sel.setLayoutParams(selLp);
+        h.sel.setVisibility(View.GONE);
+        h.row.addView(h.sel);
 
         FrameLayout iw = new FrameLayout(this);
         LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(42), dp(42));
@@ -1117,8 +1177,21 @@ public class MainActivity extends Activity {
                 12f, C_TX2, false);
         setLine(h.l3, fmtTime(e.mtime), 11f, C_TX3, false);
         setLine(h.l4, e.dir ? "" : size(e.size), 11f, C_TX3, false);
-        h.badge.setText(e.dir ? "目录" : "文件");
-        h.badge.setBackgroundColor(e.dir ? 0xFF2F6FB0 : 0xFF4A5568);
+
+        // 多选模式：左边显示勾选方框，勾上的整行高亮、徽章变「已选」
+        boolean on = selMode && isSel(e.file);
+        if (selMode) {
+            h.sel.setVisibility(View.VISIBLE);
+            h.sel.setBackgroundColor(on ? C_ACC : C_BOX);
+            h.row.setBackgroundColor(on ? C_SEL : C_CARD);
+        }
+        if (on) {
+            h.badge.setText("已选");
+            h.badge.setBackgroundColor(C_ACC);
+        } else {
+            h.badge.setText(e.dir ? "目录" : "文件");
+            h.badge.setBackgroundColor(e.dir ? 0xFF2F6FB0 : 0xFF4A5568);
+        }
     }
 
     private static String extOf(String n) {
@@ -1183,6 +1256,8 @@ public class MainActivity extends Activity {
             return;
         }
         curDir = dir;
+        selMode = false;         // 换目录了，勾选的是上一个目录里的条目，留着会指错人
+        selPaths.clear();
         List<FileEntry> dirs = new ArrayList<FileEntry>();
         List<FileEntry> plain = new ArrayList<FileEntry>();
         for (int i = 0; i < fs.length; i++) {
@@ -1309,7 +1384,7 @@ public class MainActivity extends Activity {
 
     // ============================================================ 文件管理：操作
     private void showFileMenu(final FileEntry e) {
-        String[] items = {"打开", "复制", "剪切", "重命名", "删除", "属性"};
+        String[] items = {"打开", "复制", "剪切", "重命名", "删除", "属性", "多选"};
         new AlertDialog.Builder(this)
                 .setTitle(e.name)
                 .setItems(items, new DialogInterface.OnClickListener() {
@@ -1333,6 +1408,9 @@ public class MainActivity extends Activity {
                                 break;
                             case 4:
                                 confirmDelete(e);
+                                break;
+                            case 6:
+                                enterSel(e);      // 多选：把当前这条勾上再进多选模式
                                 break;
                             default:
                                 showProps(e.file);
@@ -1528,6 +1606,155 @@ public class MainActivity extends Activity {
         if (c != null) {
             try { c.close(); } catch (Throwable t) { }
         }
+    }
+
+    // ============================================================ 文件管理：多选
+    /** 这一项勾上了没 */
+    private boolean isSel(File f) {
+        try {
+            return f != null && selPaths.contains(f.getAbsolutePath());
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** 进多选模式。seed 不为空就顺手把它勾上（长按菜单里选「多选」走这条路） */
+    private void enterSel(FileEntry seed) {
+        selMode = true;
+        selPaths.clear();
+        if (seed != null) selPaths.add(seed.file.getAbsolutePath());
+        refreshSel();
+        toast("多选：点条目勾选，顶部按钮批量操作");
+    }
+
+    /** 退出多选，清空勾选 */
+    private void exitSel() {
+        selMode = false;
+        selPaths.clear();
+        refreshSel();
+    }
+
+    /** 点一下：勾上 / 取消勾选 */
+    private void toggleSel(FileEntry e) {
+        if (e == null) return;
+        String k = e.file.getAbsolutePath();
+        if (!selPaths.remove(k)) selPaths.add(k);
+        refreshSel();
+    }
+
+    /** 勾选状态变了以后统一刷新：列表 + 工具栏 + 底栏 */
+    private void refreshSel() {
+        try { adapter.notifyDataSetChanged(); } catch (Throwable t) { }
+        buildToolbar();
+        updateFooter();
+    }
+
+    /** 当前目录里的条目是不是全勾上了 */
+    private boolean allSel() {
+        if (files.size() == 0) return false;
+        for (int i = 0; i < files.size(); i++) {
+            if (!selPaths.contains(files.get(i).file.getAbsolutePath())) return false;
+        }
+        return true;
+    }
+
+    /** 全选 / 全不选（按钮文案跟着当前状态走） */
+    private void selSelectAll() {
+        if (allSel()) {
+            selPaths.clear();
+        } else {
+            for (int i = 0; i < files.size(); i++) {
+                selPaths.add(files.get(i).file.getAbsolutePath());
+            }
+        }
+        refreshSel();
+    }
+
+    /**
+     * 勾选的条目，按列表里的显示顺序返回。
+     * 按显示顺序而不是 HashSet 的顺序 —— 一次拷几十个文件时，
+     * 落到目标目录里的先后跟眼睛看到的顺序一致，出问题好排查。
+     */
+    private List<File> selFiles() {
+        List<File> out = new ArrayList<File>();
+        for (int i = 0; i < files.size(); i++) {
+            FileEntry e = files.get(i);
+            if (selPaths.contains(e.file.getAbsolutePath())) out.add(e.file);
+        }
+        return out;
+    }
+
+    /**
+     * 批量复制 / 剪切：把勾选的塞进剪贴板，然后自己去目标目录点「粘贴」。
+     * 粘贴那一头本来就支持多项（paste() 是循环的），所以这边只管装。
+     */
+    private void selClip(boolean cut) {
+        final List<File> picked = selFiles();
+        if (picked.isEmpty()) { toast("还没勾选任何条目"); return; }
+        clip.clear();
+        clip.addAll(picked);
+        clipCut = cut;
+        int n = clip.size();
+        exitSel();                       // 退出多选，工具栏的「粘贴」会亮起来
+        toast((cut ? "已剪切 " : "已复制 ") + n + " 项　·　进目标目录点「粘贴」");
+    }
+
+    /** 批量删除。文件夹连里面的东西一起删，所以先问一次 */
+    private void selDelete() {
+        final List<File> victims = selFiles();
+        if (victims.isEmpty()) { toast("还没勾选任何条目"); return; }
+        int dirs = 0;
+        long bytes = 0;
+        for (int i = 0; i < victims.size(); i++) {
+            try {
+                if (victims.get(i).isDirectory()) dirs++;
+                else bytes += victims.get(i).length();
+            } catch (Throwable t) {
+                // 读不到就当 0，不影响删除
+            }
+        }
+        String warn = dirs > 0
+                ? "\n\n⚠ 其中有 " + dirs + " 个文件夹，里面的东西会一起删掉。" : "";
+        String sz = bytes > 0 ? "\n\n文件合计约 " + size(bytes) + "。" : "";
+        new AlertDialog.Builder(this)
+                .setTitle("删除 " + victims.size() + " 项")
+                .setMessage("确定删除这 " + victims.size() + " 项吗？删了就找不回来了。"
+                        + sz + warn)
+                .setNegativeButton("取消", null)
+                .setPositiveButton("删除", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        final File here = curDir;
+                        final int total = victims.size();
+                        footerView.setText("正在删除 0/" + total + "…");
+                        new Thread(new Runnable() {          // 批量删必须放后台，不然 UI 直接卡死
+                            @Override public void run() {
+                                final int[] cnt = new int[2];    // 0 = 成功，1 = 失败
+                                for (int i = 0; i < total; i++) {
+                                    if (deleteRec(victims.get(i))) cnt[0]++;
+                                    else cnt[1]++;
+                                    final int cur = i + 1;
+                                    runOnUiThread(new Runnable() {
+                                        @Override public void run() {
+                                            footerView.setText("正在删除 " + cur + "/" + total + "…");
+                                        }
+                                    });
+                                }
+                                runOnUiThread(new Runnable() {
+                                    @Override public void run() {
+                                        selMode = false;
+                                        selPaths.clear();
+                                        toast(cnt[1] == 0
+                                                ? "已删除 " + cnt[0] + " 项"
+                                                : "删掉 " + cnt[0] + " 项，失败 " + cnt[1]
+                                                        + " 项（可能没写权限）");
+                                        openDir(here == null ? innerHome() : here);
+                                    }
+                                });
+                            }
+                        }).start();
+                    }
+                })
+                .show();
     }
 
     // ============================================================ 设置面板
@@ -3412,7 +3639,9 @@ public class MainActivity extends Activity {
         b.append("     安装教程命令（普通安装 /data/app、装成系统程序 /system/priv-app）。\n");
         b.append("  3) 文件管理 —— 自带文件管理器。顶栏「车机」「U盘」一键切换两边目录，\n");
         b.append("     长按条目可以 复制 / 剪切 / 重命名 / 删除 / 看属性，\n");
-        b.append("     剪贴板里的东西可以粘到另一边的目录里（车机 ↔ U盘 互拷）。\n\n");
+        b.append("     剪贴板里的东西可以粘到另一边的目录里（车机 ↔ U盘 互拷）。\n");
+        b.append("     要一次处理多个：点顶栏「多选」（或长按条目选「多选」），\n");
+        b.append("     点条目逐个勾选，顶部会变成 全选 / 复制 / 剪切 / 删除 / 取消。\n\n");
         b.append("本工具不会替你安装、不会替你卸载。\n");
         b.append("只有「无线 ADB」这一项会借 root —— 用你自己投放的 mtk-su\n");
         b.append("执行一条 setprop；其余功能一律不提权。\n\n");

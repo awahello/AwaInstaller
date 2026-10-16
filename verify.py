@@ -357,6 +357,23 @@ for s in ('车机', 'U盘', '上一级', '新建', '粘贴', '刷新'):
     chk(s.encode('utf-8') in dex, '文件管理器按钮「%s」存在' % s)
 for s in ('复制', '剪切', '重命名', '删除', '属性'):
     chk(s.encode('utf-8') in dex, '长按菜单「%s」存在' % s)
+
+print('  ── 文件管理：批量多选 ──')
+for s in ('多选', '全选', '全不选', '已选', '取消'):
+    chk(s.encode('utf-8') in dex, '多选模式文案「%s」存在' % s)
+chk(b'selMode' in dex, '有多选模式开关字段（selMode）')
+chk(b'selPaths' in dex, '勾选状态按绝对路径保存（selPaths，换目录才不串）')
+chk('已选 '.encode('utf-8') in dex, '底栏有「已选 N / M 项」计数')
+chk('多选：点条目勾选'.encode('utf-8') in dex, '进多选模式有操作提示')
+chk('还没勾选任何条目'.encode('utf-8') in dex, '一个都没勾时点批量按钮有提示')
+chk('已复制 '.encode('utf-8') in dex, '批量复制有结果提示')
+chk('已剪切 '.encode('utf-8') in dex, '批量剪切有结果提示')
+chk('进目标目录点「粘贴」'.encode('utf-8') in dex, '复制/剪切后引导去目标目录粘贴')
+chk('确定删除这 '.encode('utf-8') in dex, '批量删除有二次确认（写明条数）')
+chk('个文件夹，里面的东西会一起删掉'.encode('utf-8') in dex, '批量删除会警告文件夹被连带删掉')
+chk('正在删除 '.encode('utf-8') in dex, '批量删除有 N/M 进度显示')
+chk('点顶栏「多选」'.encode('utf-8') in dex, '「关于」里说明了多选怎么用')
+
 chk('没检测到 U 盘'.encode('utf-8') in dex, 'U盘 没插时有提示文案')
 chk(b'\xe8\xa7\xa3\xe5\x8e\x8b' not in dex, '不含「解压」相关文案（未实现就不写）')
 for s in ('普通安装 apk（可桌面卸载）', '4.1', '安装为系统程序', '5.1', '5.2', '5.3', '5.4', '5.5'):
