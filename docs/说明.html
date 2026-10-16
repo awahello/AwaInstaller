@@ -139,11 +139,13 @@
   <h1>Awa的安装助手</h1>
   <p class="sub">
     吉利 ECARX R621 车机（MT6735 / Android 5.1 / API 22）用的安装助手 ——
-    查已装软件、看安装卸载教程、自带文件管理器、一键开无线 ADB。<b>不装不卸；只有无线 ADB 一项会借 root。</b>
+    查已装软件、看安装卸载教程、自带文件管理器、一键开无线 ADB。<br>
+    <b>不装不卸；只有无线 ADB 一项会借 root。</b><b style="color:#FF8589">⚠ 实测：在 R621 上执行内置的 mtk-su 会把内核搞挂 →
+    看门狗超时 → 整台车机死机重启，这台车机上请改用免 root 的 adb tcpip 方案（见下文多处 ⚠ 警告）。</b>
   </p>
   <p class="meta">
-    包名 com.awa.apkinstaller　·　版本 1.0.0　·　92,911 字节　·　md5 e1c508aaee24f57dcffe049179a955d7<br>
-    出包校验 <b>164 项全绿 / 0 失败</b>　·　签名密钥与上一版相同，<b>可直接覆盖安装</b>
+    包名 com.awa.apkinstaller　·　版本 1.0.1　·　94,922 字节　·　md5 5424fb7c702d99b9c36944887f28edc3<br>
+    出包校验 <b>186 项全绿 / 0 失败</b>　·　签名密钥与上一版相同，<b>可直接覆盖安装</b>
   </p>
 
   <div class="notice good">
@@ -159,6 +161,8 @@
     ③ <b>提权失败弹引导</b> —— R621 的 SELinux 不允许应用执行自己私有目录的副本，
     /sdcard 又是 noexec，必然要借一次电脑 ADB 放进 <code>/data/local/tmp</code>。
     现在自动导 <code>mtk-su</code> 到 <code>/sdcard</code> 并弹出那条 staging 命令。<br>
+    <b style="color:#FF8589">（⚠ 实测：在这台 R621 上执行 <code>/data/local/tmp/mtk-su</code> 会把内核搞挂 →
+    看门狗超时 → 整台车机死机重启。R621 上开无线 ADB 请走免 root 那条路，别执行 mtk-su。）</b><br>
     ④ <b>原生系统设置改成像原版的 14 项入口列表</b> —— 直接拉对应 Activity，
     不用再一层层点。
   </div>
@@ -225,7 +229,7 @@
         <div class="ico" style="background:#C2761B">A</div>
         <div class="col">
           <div class="l1">Awa的安装助手</div>
-          <div class="l2">com.awa.apkinstaller　·　v1.0.0</div>
+          <div class="l2">com.awa.apkinstaller　·　v1.0.1</div>
           <div class="l3">目录　/system/priv-app/com.awa.apkinstaller</div>
           <div class="l4">文件　base.apk　(35 KB)</div>
         </div>
@@ -431,7 +435,9 @@
     <b>无线 ADB</b> 改成了真开关：点「开启」直接生效，不用再去 adb shell 里敲命令。
     但它在 Android 5.1 上没有免 root 的接口（控制端口的 <code>adb_tcp_port</code> 是 Android 6.0 才加的，
     这台车机的 <code>Settings.Global</code> 里根本没这个字段），所以<b>这一项是全工具唯一会借 root 的地方</b> ——
-    用你自己投放的 <code>mtk-su</code> 跑一条 <code>setprop</code>。开关下面还留了「手敲命令 / 说明」入口。
+    用你自己投放的 <code>mtk-su</code> 跑一条 <code>setprop</code>。开关下面还留了「手敲命令 / 说明」入口。<br>
+    <b style="color:#FF8589">⚠ 实测：在这台 R621 上执行 mtk-su 会把内核搞挂 → 看门狗超时 → 整台车机死机重启</b>
+    （它是内核漏洞利用程序，靠触发内核内存破坏拿 root）。这台车机上请走下面那条免 root 的路，别点一键开关。
   </p>
   <div class="device"><div class="scr">
     <div class="top">
@@ -469,6 +475,8 @@
   </div></div>
 
   <div class="notice" style="margin-top:20px">
+    <b style="color:#FF8589">⚠ 实测警告：mtk-su 是内核漏洞利用程序（靠触发内核内存破坏拿 root），在这台 R621 上执行它会把内核搞挂 → 看门狗超时 → 整台车机死机重启。</b><br>
+    所以一键开关是给 mtk-su 真能跑起来的设备保留的；这台车机上请直接用下面「免 root 的另一条路」（电脑 <code>adb tcpip 5555</code>），零风险。<br><br>
     <b>无线 ADB 一键开关 —— 为什么只有它需要 root，以及它现在怎么工作</b>
     <table style="margin-top:12px">
       <tr><th style="width:150px">点「开启」之后</th><th>程序做什么</th></tr>
@@ -611,8 +619,14 @@ mtk-su 下载地址
         <div class="mf"><span class="b dim">关闭</span><span class="b dim">复制全部</span></div>
       </div>
     </div>
-    <div class="foot">已发现 12 个 APK　·　点条目 → 安装教程</div>
-  </div></div>
+        <div class="foot">已发现 12 个 APK　·　点条目 → 安装教程</div>
+      </div></div>
+
+  <p class="cap" style="color:#FF8589;border-left:4px solid #E5484D;padding-left:12px;line-height:1.9">
+    ⚠ 上面这段是应用内原版教程的原样展示。<b style="color:#FF8589">实测：在这台 R621 上执行 <code>/data/local/tmp/mtk-su</code>
+    会把内核搞挂 → 看门狗超时 → 整台车机死机重启</b>（内核漏洞利用程序，靠内存破坏拿 root）。这台车机上装 APK
+    请走「二、安装为系统程序」或用电脑 <code>adb install</code>，别用 4.1 的 mtk-su 提权。
+  </p>
 
   <h2>改动清单</h2>
   <table>
@@ -792,13 +806,15 @@ mtk-su 下载地址
     <li>想重启 / USB ADB 开关直接生效：按教程把它装进 <code>/system/priv-app/com.awa.apkinstaller/</code>。
         Android 5.1 没有 privapp 权限白名单，装进去 <code>REBOOT</code> / <code>WRITE_SECURE_SETTINGS</code> 就自动生效，<b>不用 root</b>。</li>
     <li>无线 ADB 一键开关<b>不需要额外准备</b> —— mtk-su 已经打进包里了，第一次点「开启」会自动释放到应用私有目录。
-        万一不灵，点「设置 → 无线 ADB · 提权自检」看卡在哪一步，再按它的提示把 mtk-su 投放到
-        <code>/data/local/tmp/</code> 试一次。</li>
+        <b style="color:#FF8589">⚠ 但实测：在这台 R621 上执行 mtk-su 会把内核搞挂 → 看门狗超时 → 整台车机死机重启</b>
+        （内核漏洞利用程序，靠内存破坏拿 root）。<b>这台车机上别点一键开关</b>，改用免 root 的办法：USB 连着时在电脑上
+        <code>adb tcpip 5555</code>，拔线后 <code>adb connect 车机IP:5555</code>，用完 <code>adb usb</code> 关掉 —— 零风险。
+        （一键开关是给 mtk-su 真能跑起来的设备准备的；万一不灵，点「设置 → 无线 ADB · 提权自检」看卡在哪一步。）</li>
     <li>包名和签名跟上一版一致，<b>可以直接覆盖安装</b>，不用先卸载。</li>
   </ol>
 
   <div class="notice" style="margin-top:26px">
-    <b>出包前的安全核验（115 项全绿，0 失败）：</b>
+    <b>出包前的安全核验（186 项全绿，0 失败）：</b>
     ZIP 完整性（含 <code>assets/mtk-su</code> 大小核对）/ 资源表应用名 /
     清单权限（含"没有声明安装卸载权限"的反向检查）/
     dex 有效性（Adler-32 + SHA-1 + string_ids 升序）/ 类型引用全部可解析 /

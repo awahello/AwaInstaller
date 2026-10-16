@@ -10,7 +10,7 @@
 **所不做的事（有意为之）：**
 本工具**不替你安装、不替你卸载**。它只把命令摆出来让你自己抄 —— 所以清单里没有 `INSTALL_PACKAGES`、`DELETE_PACKAGES`、`MOUNT_UNMOUNT_FILESYSTEMS` 这三条危险权限（装在 `/system/priv-app` 时它们会真的生效，跟「只出教程」的定位冲突）。
 
-**唯一会提权的地方：** 无线 ADB 开关。原因和实现见下面「无线 ADB」。
+**唯一会提权的地方：** 无线 ADB 开关（会执行内置的 mtk-su —— ⚠ 在 R621 上会导致整机死机重启，见「无线 ADB」一节开头的实测警告）。
 
 ---
 
@@ -82,10 +82,15 @@ adb tcpip 5555
 
 ### 一键开关怎么做的
 
+> **⚠ 实测警告 —— 先读这段再往下看：`mtk-su` 是内核漏洞利用程序（靠触发内核内存破坏拿 root）。在这台吉利 ECARX R621（MT6735 / Android 5.1）上执行它会把内核搞挂 → 看门狗超时 → 整台车机死机重启。**
+>
+> - **这台车机上不要用无线 ADB 一键开关**，直接用上面「免 root 的另一条路」（电脑 `adb tcpip 5555`），零风险；
+> - 一键开关和下面的投放流程是给 mtk-su 真能跑起来的设备保留的，R621 上别试。
+
 包里内置 `assets/mtk-su`（65,144 字节），第一次用时自动释放到应用私有目录并 `chmod`。候选提权程序按这个顺序试：
 
 1. 上次跑通的那个
-2. `/data/local/tmp/mtk-su` —— SELinux 明确允许应用执行这里的东西，**最稳**
+2. `/data/local/tmp/mtk-su` —— SELinux 明确允许应用执行这里的东西，最稳（但见上方 ⚠ 实测警告：R621 上执行它会死机）
 3. 内置的 mtk-su（释放到应用私有目录）
 4. 系统本来就带的 su（`/system/bin/su` 等）
 5. `/sdcard` 下手动放的 —— 垫底，因为 `/sdcard` 是 FUSE + noexec，放那儿能读不能跑
@@ -101,6 +106,8 @@ adb tcpip 5555
 | `/sdcard/mtk-su` | ❌ FUSE + noexec，能读不能跑 |
 | 应用私有目录的副本 | ❌ SELinux 不允许应用执行自己的副本 |
 | `/data/local/tmp/mtk-su` | ✅ SELinux 明确允许应用执行 |
+
+> 再次提醒：**这套投放 + 执行流程在 R621 上会导致整机死机重启**，只适用于 mtk-su 真能跑起来的设备。
 
 所以**要借一次电脑 ADB**，把 mtk-su 放进 `/data/local/tmp`：
 
@@ -182,7 +189,7 @@ export R8_JAR=/path/to/r8.jar
 export PYTHON=python3
 
 ./build.sh          # javac → d8 → 打包签名
-python3 verify.py   # 170 项出包校验
+python3 verify.py   # 186 项出包校验
 ```
 
 产物在 `dist/`，第一次构建会生成签名私钥 `tools/awa_key.pem`（**已在 .gitignore 里，别提交**）。
@@ -223,7 +230,7 @@ python3 verify.py   # 170 项出包校验
 ├── resources.arsc           应用名已改成「Awa的安装助手」
 ├── build.sh                 编译流水线
 ├── build_apk.py             装 APK + v1 签名
-├── verify.py                170 项出包校验
+├── verify.py                186 项出包校验
 ├── src/
 │   └── com/awa/apkinstaller/
 │       ├── MainActivity.java    全部 UI 和功能（约 3000 行）
@@ -251,5 +258,7 @@ python3 verify.py   # 170 项出包校验
 ## 免责声明
 
 本工具只显示教程命令，不执行安装 / 卸载 / 提权（唯一例外是无线 ADB 开关）。把它装进 `/system/priv-app` 会改动系统分区，操作前备份。作者不对使用本工具造成的任何后果负责。
+
+**⚠ mtk-su 风险：** 内置的 `assets/mtk-su` 是第三方内核漏洞利用程序，靠触发内核内存破坏拿 root。**在这台 R621 上执行它会把内核搞挂 → 看门狗超时 → 整台车机死机重启**。无线 ADB 一键开关与 4.1 提权教程都依赖它，在 R621 上请一律改用免 root 方案（`adb tcpip` / 装系统应用 / 电脑 `adb install`）。
 
 目标设备：吉利 ECARX R621（MT6735 / Android 5.1 / API 22 / userdebug）。别的车机没测过。
